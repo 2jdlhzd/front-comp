@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, Button, StyleSheet, FlatList } from "react-native";
 import Axios from "../Axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const Carrito = () => {
   const [cartItems, setCartItems] = useState([]);
   const [actualizar, setActualizar] = useState(false);
+  const [token, setToken] = useState(null);
 
   const products = [
     { id: 1, name: "Product 1", price: 10 },
@@ -35,8 +37,10 @@ const Carrito = () => {
   useEffect(() => {
     const fechData = async () => {
       try {
-        const response = await Axios.get("/carritos/obtener");
-        //console.log(response);
+        const response = await Axios.get("/carritos/obtener", {
+          headers: { Authorization: BarProp },
+        });
+        console.log(response);
         setCartItems((prev) => (prev = response.data.response));
       } catch (err) {
         console.log(err);
@@ -46,7 +50,15 @@ const Carrito = () => {
     fechData();
   }, [actualizar]);
 
-  console.log(cartItems);
+  useEffect(() => {
+    const getToken = async () => {
+      const result = await AsyncStorage.getItem("login");
+      setToken(result);
+    };
+    getToken();
+  }, []);
+
+  console.log(cartItems, token);
 
   return (
     <View style={styles.container}>

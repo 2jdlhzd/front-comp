@@ -1,6 +1,6 @@
 import Axios from "axios";
 
-export const urlMain = "http://192.168.1.68:3000/api";
+export const urlMain = "http://192.168.1.92:3000/api";
 //export const urlMain = "https://restcountries.com/v3.1";
 export const multipartHeader = {
   headers: {

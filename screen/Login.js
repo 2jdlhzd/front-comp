@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -7,10 +7,54 @@ import {
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import Axios from "../Axios";
+import styles from "../styles/AuthStyles";
+import Auth from "../components/Auth";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const Login = ({ navigation }) => {
-  const handleLogin = () => {
-    // Aquí puedes agregar la lógica para manejar el inicio de sesión
+  const [user, setUser] = useState({});
+  const [error, setError] = useState({ status: false, msg: "" });
+  const [isPending, setIsPending] = useState(false);
+
+  const handle = (e, name) => {
+    setUser((prev) => ({ ...prev, [name]: e }));
+  };
+  const Pass = (e, password) => {
+    setUser((prev) => ({ ...prev, [password]: e }));
+  };
+  const storeData = async (value) => {
+    try {
+      const jsonvalue = JSON.stringify(value);
+    } catch (e) {}
+  };
+  const getData = async () => {
+    try {
+      const value = await AsyncStorage.getItem("login");
+      if (value !== null) {
+      }
+    } catch (e) {}
+  };
+
+  const login = async () => {
+    setIsPending(true);
+    console.log(user);
+    try {
+      const res = await Axios.post("/usuarios/login", user);
+      navigation.navigate("ListaProducto");
+      await AsyncStorage.setItem("login", JSON.stringify(res.data.response));
+
+      console.log(res.data.response.token);
+    } catch (error) {
+      console.log(error);
+      navigation.navigate("ListaProducto");
+      setError({ status: true, msg: "Usuario o contraseña incorrectos" });
+      setTimeout(() => {
+        setError({ status: false, msg: "" });
+      }, 100);
+    }
+
+    setIsPending(false);
   };
 
   const handleCreateAccount = () => {
@@ -19,108 +63,56 @@ const Login = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <Ionicons name="laptop" size={100} color="white" />
-      <Text style={styles.title}>CompuMóvil</Text>
-      <View style={styles.formContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          keyboardType="email-address"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Contraseña"
-          secureTextEntry={true}
-        />
-        <TouchableOpacity
-          style={styles.loginButton}
-          onPress={() => {
-            navigation.navigate("ListaProducto");
-          }}
-        >
-          <Text style={styles.loginButtonText}>Iniciar sesión</Text>
+      <View style={styles.banner}>
+        <Ionicons name="laptop" size={100} color="white" style={styles.ico} />
+        <Text style={styles.title}>CompuMóvil</Text>
+      </View>
+
+      <View style={styles.box}>
+        <View style={styles.formContainer}>
+          <Text style={styles.textInput}>E-mail</Text>
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              keyboardType="email-address"
+              onChangeText={(text) => handle(text, "correo")}
+            />
+          </View>
+          <Text style={styles.textInput}>Contraseña</Text>
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              onChangeText={(text) => Pass(text, "password")}
+              secureTextEntry={true}
+            />
+          </View>
+          <View style={styles.btn}>
+            <TouchableOpacity
+              style={styles.loginButton}
+              onPress={login}
+              disabled={isPending}
+            >
+              <Text style={styles.loginButtonText}>Iniciar sesión</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+      <Auth />
+      <View style={styles.noAccountContainer}>
+        <TouchableOpacity onPress={handleCreateAccount}>
+          <Text
+            style={styles.createAccountText}
+            onPress={() => {
+              navigation.navigate("Register");
+            }}
+          >
+            ¿No tienes una cuenta? Crea una aquí
+          </Text>
         </TouchableOpacity>
       </View>
-      <View style={styles.socialLoginContainer}>
-        <TouchableOpacity style={styles.socialButton}>
-          <Ionicons name="logo-facebook" size={24} color="blue" />
-          <Text style={styles.socialButtonText}>Facebook</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.socialButton}>
-          <Ionicons name="logo-google" size={24} color="black" />
-          <Text style={styles.socialButtonText}>Google</Text>
-        </TouchableOpacity>
-      </View>
-      <TouchableOpacity onPress={handleCreateAccount}>
-        <Text
-          style={styles.createAccountText}
-          onPress={() => {
-            navigation.navigate("Register");
-          }}
-        >
-          ¿No tienes una cuenta? Crea una aquí
-        </Text>
-      </TouchableOpacity>
+      {true && <Text style={{ color: "red" }}>{error.msg}</Text>}
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "royalblue",
-  },
-
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "white",
-    marginBottom: 20,
-  },
-  formContainer: {
-    width: "80%",
-    marginBottom: 20,
-    margin: 10,
-  },
-  input: {
-    backgroundColor: "white",
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    marginBottom: 10,
-  },
-  loginButton: {
-    backgroundColor: "white",
-    borderRadius: 5,
-    padding: 10,
-    alignItems: "center",
-  },
-  loginButtonText: {
-    color: "grey",
-    fontWeight: "bold",
-  },
-  socialLoginContainer: {
-    flexDirection: "row",
-    marginBottom: 20,
-  },
-  socialButton: {
-    backgroundColor: "white",
-    borderRadius: 5,
-    padding: 10,
-    alignItems: "center",
-    marginRight: 10,
-    flexDirection: "row",
-  },
-  socialButtonText: {
-    color: "grey",
-    marginLeft: 10,
-    fontWeight: "bold",
-  },
-  createAccountText: {
-    color: "white",
-    textDecorationLine: "underline",
-  },
-});
 
 export default Login;

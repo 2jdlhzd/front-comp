@@ -21,7 +21,7 @@ const ListaProducto = ({ navigation }) => {
       await Axios.post("/carritos/crear", datos);
       console.log("Añadido correctamente");
     } catch (error) {
-      console.log(error);
+      console.log("ee", error);
     }
   };
 
@@ -39,7 +39,7 @@ const ListaProducto = ({ navigation }) => {
 
     fechData();
   }, []);
-
+  console.log("e", productos);
   return (
     <View style={styles.contenedor}>
       <View style={styles.barra}>
