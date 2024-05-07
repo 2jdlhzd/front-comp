@@ -5,6 +5,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import Register from "./screen/Register";
 import ListaProducto from "./screen/ListaProducto";
 import Carrito from "./screen/Carrito";
+import Paypal from "./screen/Paypal";
 
 const Stack = createNativeStackNavigator();
 
@@ -16,6 +17,7 @@ export default function App() {
         <Stack.Screen name="ListaProducto" component={ListaProducto} />
         <Stack.Screen name="Register" component={Register} />
         <Stack.Screen name="Carrito" component={Carrito} />
+        <Stack.Screen name="Paypal" component={Paypal} />
       </Stack.Navigator>
     </NavigationContainer>
   );

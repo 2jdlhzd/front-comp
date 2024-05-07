@@ -9,8 +9,24 @@ import {
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import Axios from "../Axios";
+function currencyFormat(num) {
+  return "$" + num.toFixed(2).replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1,");
+}
+
+const getData = async () => {
+  try {
+    const value = await AsyncStorage.getItem("login");
+    if (value !== null) {
+      JSON.parse(value);
+      // console.log(value.todo);
+    }
+  } catch (e) {
+    console.log("No se recibió datos. Error: " + e);
+  }
+};
 
 const ListaProducto = ({ navigation }) => {
   const [productos, setProductos] = useState([]);
@@ -38,8 +54,8 @@ const ListaProducto = ({ navigation }) => {
     };
 
     fechData();
+    getData();
   }, []);
-  console.log("e", productos);
   return (
     <View style={styles.contenedor}>
       <View style={styles.barra}>
@@ -60,14 +76,19 @@ const ListaProducto = ({ navigation }) => {
             <View style={styles.caja} key={producto.id}>
               <View style={styles.producto}>
                 <Image
-                  source={require("../assets/pc.jpg")}
+                  // source={{
+                  //   uri: "https://drive.google.com/file/d/1vbOxXoqHl7s3cvw9SwAN64FFSmNf5L4R/view",
+                  // }}
+                  source={require("C:/Users/Hernandez/Desktop/Escritorio/proyect/compumovil/assets/img/pc.jpg")}
                   style={styles.img}
                 />
                 <Text style={styles.text}>{producto.descripcion}</Text>
                 <Text style={styles.text}>{producto.nombre}</Text>
               </View>
               <View>
-                <Text style={styles.precio}>${producto.nombre}</Text>
+                <Text style={styles.precio}>
+                  {currencyFormat(producto.precio)}
+                </Text>
               </View>
               <View style={styles.botones}>
                 <TouchableOpacity style={styles.btn1}>

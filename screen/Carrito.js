@@ -1,12 +1,51 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, Button, StyleSheet, FlatList } from "react-native";
+import React, { Component, useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  Button,
+  StyleSheet,
+  FlatList,
+  WebView,
+  ActivityIndicator,
+} from "react-native";
 import Axios from "../Axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const Carrito = () => {
+const Carrito = ({ navigation }) => {
   const [cartItems, setCartItems] = useState([]);
   const [actualizar, setActualizar] = useState(false);
-  const [token, setToken] = useState(null);
+
+  state = {
+    accessToken: null,
+    approvalUrl: null,
+    paymentId: null,
+  };
+  const Details = {
+    intent: "sale",
+    payer: {
+      payment_method: "paypal",
+    },
+    transactions: [
+      {
+        amount: {
+          total: "100",
+          currency: "MXN",
+          details: {
+            subtotal: "100",
+            tax: "0",
+            shipping: "0",
+            handling_fee: "0",
+            shipping_discount: "0",
+            insurance: "0",
+          },
+        },
+      },
+    ],
+    redirect_urls: {
+      return_url: "https://example.com",
+      cancel_url: "https://example.com",
+    },
+  };
 
   const products = [
     { id: 1, name: "Product 1", price: 10 },
@@ -24,6 +63,81 @@ const Carrito = () => {
     return cartItems.reduce((total, item) => total + item.price, 0);
   };
 
+  const StartPay = () => {
+    Axios.post(
+      "https://api.sandbox.paypal.com/v1/oauth2/token",
+      { grant_type: "client_credentials" },
+      {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          Authorization: ` Bearer A21AAIBBpEJobbyfjno52WD0oZhzOymXosLTTQNumNR1VlwlH0lct4Ix3YspgnTwHVLDPkRyy_Jup_SimQVhPypLrb33Tj9XQ`,
+        },
+      }
+    )
+      .then((response) => {
+        //console.log(response.data.access_token);
+        this.setState({
+          accessToken: response.data.access_token,
+        });
+        Axios.post(
+          "https://api.sandbox.paypal.com/v1/payments/payment",
+          Details,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer A21AAIBBpEJobbyfjno52WD0oZhzOymXosLTTQNumNR1VlwlH0lct4Ix3YspgnTwHVLDPkRyy_Jup_SimQVhPypLrb33Tj9XQ`,
+            },
+          }
+        )
+          .then((response) => {
+            console.log("Response", response);
+            const { id, links } = response.data;
+            const approvalUrl = links.find(
+              (data) => data.rel == "approval_url"
+            );
+            this.setState({
+              paymentId: id,
+              approvalUrl: approvalUrl.href,
+            });
+            console.log(id);
+            console.log(approvalUrl);
+          })
+          .catch((err) => {
+            console.log(...err);
+          });
+      })
+      .catch((err) => {
+        console.log({ ...err });
+      });
+  };
+
+  _onNavigationStateChange = (webViewState) => {
+    if (webViewState.url.includes("https://example.com/")) {
+      this.setState({
+        approvalUrl: null,
+      });
+
+      const { PayerID, paymentId } = webViewState.url;
+
+      Axios.post(
+        `https://api.sandbox.paypal.com/v1/payments/payment/${paymentId}/execute`,
+        { payer_id: PayerID },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${this.state.accessToken}`,
+          },
+        }
+      )
+        .then((response) => {
+          console.log(response);
+        })
+        .catch((err) => {
+          console.log({ ...err });
+        });
+    }
+  };
+
   const deleteItem = async (id) => {
     try {
       await Axios.delete(`/carritos/eliminar/${id}`);
@@ -37,8 +151,12 @@ const Carrito = () => {
   useEffect(() => {
     const fechData = async () => {
       try {
-        const response = await Axios.get("/carritos/obtener", {
-          headers: { Authorization: BarProp },
+        const response = await Axios.get(`/carritos/obtener/${user_id}`, {
+          //headers: { Authorization: BarProp },
+          headers: {
+            Authorization:
+              "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NCwibm9tYnJlIjoicHdlcSIsImFwZWxsaWRvcyI6ImNhYnJlcmEgYWd1aXJyZSIsImNvcnJlbyI6Imhlcm5hbmRlemo5NTlAZ21haWwuY29tIiwicGFzc3dvcmQiOiIkMmEkMTIkWW5xTHd0amlRbTBWUnlSaWZqYS5ST0dRNWNiMHlyUDcuOG9qZmVVV3BSdEZqVUlYWno5SWkiLCJjcmVhdGVkQXQiOiIyMDI0LTA0LTI5VDE4OjU4OjM5LjAwMFoiLCJ1cGRhdGVkQXQiOiIyMDI0LTA0LTI5VDE4OjU4OjM5LjAwMFoiLCJpYXQiOjE3MTQ1MDcyMDQsImV4cCI6MTcxNDU5MzYwNH0s.n1JAE7CvXqdTg6Bvt5qNYp8ltEz9pKZoVPI24y - imZg",
+          },
         });
         console.log(response);
         setCartItems((prev) => (prev = response.data.response));
@@ -50,15 +168,15 @@ const Carrito = () => {
     fechData();
   }, [actualizar]);
 
-  useEffect(() => {
+  /*  useEffect(() => {
     const getToken = async () => {
       const result = await AsyncStorage.getItem("login");
       setToken(result);
     };
     getToken();
-  }, []);
+  }, []); */
 
-  console.log(cartItems, token);
+  //console.log(cartItems, token);
 
   return (
     <View style={styles.container}>
@@ -84,8 +202,13 @@ const Carrito = () => {
       <View style={styles.buttonsContainer}>
         <Button
           title="Pagar"
-          onPress={() => alert("Redirect to payment gateway")}
-          disabled={cartItems.length === 0}
+          onPress={() => {
+            {
+              //StartPay();
+              navigation.navigate("Paypal");
+            }
+          }}
+          //disabled={cartItems.length === 0}
         />
         <Button
           title="Vaciar Carrito"
